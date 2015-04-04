@@ -1,0 +1,86 @@
+/*  
+* Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Purpose License Version 2 as
+* published by the Free Software Foundation
+*
+* Original from: github.com/jadonk/validation-scripts/blob/master/test-capemgr/ 
+*
+* Modified by Derek Molloy for the example on www.derekmolloy.ie
+* that maps GPIO pins for the example
+*/
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part-number = "AR11";
+    version = "00A0";
+    
+    /* state the resources this cape uses */
+    exclusive-use =
+        /* the pin header P9 uses */
+        "P9.11", /* GPIO_30, CFG_PROGB */
+        "P9.13", /* GPIO_31, CFG_INITB */
+        "P9.15", /* GPIO_48, CFG_DONE  */
+        "P9.28", /* SPI1_CS0 */
+        "P9.29", /* SPI1_D0 */
+        "P9.30", /* SPI1_D1 */
+        "P9.31"; /* SPI1_SCLK */
+        
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            fpga_config_pins: pinmux_fpga_config_pins {
+     	        pinctrl-single,pins = <
+                    0x070 0x17  /* CFG_PROGB P9.11 GPIO_30 ADDR(870) gpio0_30 OUTPUT | PULLUP | MODE7 */
+                    0x074 0x37  /* CFG_INITB P9.13 GPIO_31 ADDR(874) gpio0_31 INPUT  | PULLUP | MODE7 */
+                    0x040 0x37  /* CFG_DONE  P9.15 GPI0_48 ADDR(840) gpio1_16 INPUT  | PULLUP | MODE7 */
+     		>;
+            };
+
+            spi1_pins: pinmux_spi1_pins {
+                pinctrl-single,pins = <
+                    0x190 0x13	/* P9_31 = spi1_sclk    OUTPUT_PULLUP | MODE3 */
+		    0x194 0x33	/* P9_29 = spi1_d0      INPUT_PULLUP  | MODE3 */
+		    0x198 0x13	/* P9_30 = spi1_d1	OUTPUT_PULLUP | MODE3 */
+		    0x19c 0x13	/* P9_28 = spi1_cs0     OUTPUT_PULLUP | MODE3 */	
+                >;
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            test_helper: helper {
+                 compatible = "bone-pinmux-helper";
+                 pinctrl-names = "default";
+                 pinctrl-0 = <&fpga_config_pins>;
+                 status = "okay";
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&spi1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status		= "okay";
+            pinctrl-names	= "default";
+            pinctrl-0		= <&spi1_pins>;	
+            // cs-gpios = <&gpio4 17 0>;
+            spi1_0{
+                #address-cells = <1>;
+                #size-cells = <0>;
+                compatible = "spidev";
+                reg = <0>;
+                spi-max-frequency = <16000000>;
+                spi-cpha; // copied from BB-BONE-LOGIBONE-00R1.dts
+            };
+        };
+    };
+};
