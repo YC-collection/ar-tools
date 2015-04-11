@@ -1,12 +1,13 @@
 # http://derekmolloy.ie/gpios-on-the-beaglebone-black-using-device-tree-overlays/
 
-sudo su -
-
-export SLOTS=/sys/devices/bone_capemgr.9/slots
-export PINS=/sys/kernel/debug/pinctrl/44e10800.pinmux/pins
 
 cd /home/machinekit/proj/ar-tools/overlay
 ./build
+
+
+sudo su -
+export SLOTS=/sys/devices/bone_capemgr.9/slots
+export PINS=/sys/kernel/debug/pinctrl/44e10800.pinmux/pins
 cp AR11-00A0.dtbo /lib/firmware
 cat $SLOTS
 echo AR11 > $SLOTS
