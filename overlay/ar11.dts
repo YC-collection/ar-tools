@@ -44,8 +44,10 @@
 
             spi1_pins: pinmux_spi1_pins {
                 pinctrl-single,pins = <
-                    0x190 0x13	/* P9_31 = spi1_sclk    OUTPUT_PULLUP | MODE3 */
-		    0x194 0x33	/* P9_29 = spi1_d0      INPUT_PULLUP  | MODE3 */
+                    // 0x190 0x33	/* P9_31 = spi1_sclk    INPUT_PULLUP  | MODE3 */
+		    // 0x194 0x33	/* P9_29 = spi1_d0      INPUT_PULLUP  | MODE3 */
+                    0x190 0x2B	/* P9_31 = spi1_sclk    INPUT_NO-PULLUP/DOWN | MODE3 */
+		    0x194 0x2B	/* P9_29 = spi1_d0      INPUT_NO-PULLUP/DOWN | MODE3 */
 		    0x198 0x13	/* P9_30 = spi1_d1	OUTPUT_PULLUP | MODE3 */
 		    0x19c 0x13	/* P9_28 = spi1_cs0     OUTPUT_PULLUP | MODE3 */	
 		    0x164 0x12	/* P9_42 = spi1_cs1     OUTPUT_PULLUP | MODE2 */	

@@ -3,3 +3,4 @@
 echo "Compiling the AR11 overlay from .dts to .dtbo"
 
 dtc -O dtb -o AR11-00A0.dtbo -b 0 -@ ar11.dts
+sudo cp -v AR11-00A0.dtbo /lib/firmware

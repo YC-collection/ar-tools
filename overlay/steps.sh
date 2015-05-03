@@ -29,7 +29,7 @@ cat /sys/kernel/debug/pinctrl/44e10800.pinmux/pingroups
 
 cat $PINS | grep "870"  # CFG_PROGB, OUT, GPIO_30 in .dts file
     # should be: OUTPUT w/ PULLUP
-    # pin 30 (44e10878) 00000017 pinctrl-single 
+    # pin 28 (44e10878) 00000017 pinctrl-single 
 cat $PINS | grep "874"  # CFG_INITB, IN,  GPIO_31 in .dts file
 cat $PINS | grep "840"  # CFG_DONE,  IN,  GPIO_48 in .dts file
     # should be: INPUT w/ PULLUP
@@ -44,6 +44,8 @@ echo 0 > /sys/class/gpio/gpio${ID}/value      # voltage: 0   V
 
 ID=31   # CFG_INITB
 ID=48   # CFG_DONE
+ID=111  # SPI_D0, h_spi_o
 echo $ID > /sys/class/gpio/export
 echo in > /sys/class/gpio/gpio${ID}/direction
 cat /sys/class/gpio/gpio${ID}/value
+
