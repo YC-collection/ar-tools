@@ -23,15 +23,17 @@
 #define CFG_DELAY        1
 
 #define SPI_MAX_LENGTH 4096
+// #define SPI_MAX_LENGTH 64
 static int  spi_fd;
 
 static const char * spi_dev = "/dev/spidev0.0";
 static unsigned int mode = 0 ;
 static unsigned int bits = 8 ;
 // failed for RPi2: static unsigned long speed = 16000000UL ;
-// static unsigned long speed = 15000000UL ;
-// static unsigned long speed = 15500000UL ;
-static unsigned long speed =    15700000UL ;
+static unsigned long speed = 15000000UL ;
+// static unsigned long speed =  1000000UL ;
+// static unsigned long speed =   100000UL ;
+// static unsigned long speed = 15700000UL ;
 
 unsigned char configBits[1024*1024*4], configDummy[1024*1024*4];
 
@@ -185,6 +187,7 @@ int serialConfig(unsigned char * buffer, unsigned int length){
         if(write(spi_fd, &buffer[write_index], write_length) < write_length){
             printf("spi write error \n");
         }
+        printf ("length(%d) write_length(%d)\n", length, write_length);
         write_index += write_length ;
         length -= write_length ;
         write_length = min(length, SPI_MAX_LENGTH);
