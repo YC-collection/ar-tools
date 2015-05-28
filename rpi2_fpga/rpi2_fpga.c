@@ -26,9 +26,7 @@
 // #define SPI_MAX_LENGTH 64
 static int  spi_fd;
 
-static const char * spi_dev = "/dev/spidev0.0";
 static unsigned int mode = 0 ;
-static unsigned int bits = 8 ;
 // failed for RPi2: static unsigned long speed = 16000000UL ;
 // static unsigned long speed = 15000000UL ;
 // static unsigned long speed =  1000000UL ;
@@ -67,62 +65,13 @@ static inline unsigned int min(unsigned int a, unsigned int b){
 }
 
 int init_spi(void){
-    int ret ;
     uint32_t spiFlags;
+    // refer to http://abyz.co.uk/rpi/pigpio/cif.html#spiOpen
     //             bbbbbb      R           T           nnnn        W          A          ux         px        mm
     // spiFlags = (0 << 16) | (0 << 15) | (0 << 14) | (0 << 10) | (0 << 9) | (0 << 8) | (0 << 5) | (0 << 2) | mode;
     spiFlags = mode;
     spi_fd = spiOpen(0, speed, spiFlags);
     printf("spi_fd(%d)\n", spi_fd);
-
-
-    // spi_fd = open(spi_dev, O_RDWR);
-    // if (spi_fd < 0){
-    //     printf("can't open spi device: %s\n", spi_dev);
-    //     return -1 ;
-    // }
-
-    // ret = ioctl(spi_fd, SPI_IOC_WR_MODE, &mode);
-    // if (ret == -1){
-    //     printf("can't set spi mode \n");
-    //     return -1 ;
-    // }
-
-    // ret = ioctl(spi_fd, SPI_IOC_RD_MODE, &mode);
-    // if (ret == -1){
-    //     printf("can't get spi mode \n ");
-    //     return -1 ;
-    // }
-
-    // /*
-    //  * bits per word
-    //  */
-    // ret = ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
-    // if (ret == -1){
-    //     printf("can't set bits per word \n");
-    //     return -1 ;
-    // }
-
-    // ret = ioctl(spi_fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
-    // if (ret == -1){
-    //     printf("can't get bits per word \n");
-    //     return -1 ;
-    // }
-
-    // /*
-    //  * max speed hz
-    //  */
-    // ret = ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
-    // if (ret == -1){
-    //     printf("can't set max speed hz \n");
-    //     return -1 ;
-    // }
-
-    // ret = ioctl(spi_fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
-    // if (ret == -1){
-    //     printf("can't get max speed hz \n");
-    //     return -1 ;
-    // }
 
     return spi_fd;
 }
