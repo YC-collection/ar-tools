@@ -13,6 +13,7 @@
 #include <linux/spi/spidev.h>
 #include <string.h> 
 #include <math.h>
+#include <assert.h>
 #include <pigpio.h>
 
 #define CONFIG_CYCLES 1
@@ -22,18 +23,25 @@
 #define CFG_INIT         6      // GPIO_06
 #define CFG_DELAY        1
 
+#define SPI_MOSI        10      // GPIO_10
+#define SPI_MISO         9      // GPIO_09
+#define SPI_CLK         11      // GPIO_11
+#define SPI_CE0_N        8      // GPIO_08
+#define SPI_CE1_N        7      // GPIO_07
+
 #define SPI_MAX_LENGTH 4096
 // #define SPI_MAX_LENGTH 64
 static int  spi_fd;
 
 static unsigned int mode = 0 ;
 // failed for RPi2: static unsigned long speed = 16000000UL ;
-// static unsigned long speed = 15000000UL ;
+   static unsigned long speed = 16000000UL ;
 // static unsigned long speed =  1000000UL ;
 // static unsigned long speed =   100000UL ;
-static unsigned long speed =  9500000UL ;
+// static unsigned long speed =  9500000UL ;
+// static unsigned long speed =   500000UL ;
 
-char configBits[1024*1024*4], configDummy[1024*1024*4];
+char configBits[4*1024*1024];
 
 void initGPIOs();
 void closeGPIOs();
@@ -69,9 +77,15 @@ int init_spi(void){
     // refer to http://abyz.co.uk/rpi/pigpio/cif.html#spiOpen
     //             bbbbbb      R           T           nnnn        W          A          ux         px        mm
     // spiFlags = (0 << 16) | (0 << 15) | (0 << 14) | (0 << 10) | (0 << 9) | (0 << 8) | (0 << 5) | (0 << 2) | mode;
-    spiFlags = mode;
+    spiFlags = mode; // default mode(0)
     spi_fd = spiOpen(0, speed, spiFlags);
     printf("spi_fd(%d)\n", spi_fd);
+    
+    gpioSetPullUpDown(SPI_MOSI,  PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(SPI_MISO,  PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(SPI_CLK,   PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(SPI_CE0_N, PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(SPI_CE1_N, PI_PUD_UP);   // Sets a pull-up.
 
     return spi_fd;
 }
@@ -87,6 +101,11 @@ void initGPIOs()
     gpioSetMode(CFG_PROG, PI_OUTPUT);
     gpioSetMode(CFG_INIT, PI_INPUT);
     gpioSetMode(CFG_DONE, PI_INPUT);
+
+    gpioSetPullUpDown(CFG_PROG, PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(CFG_INIT, PI_PUD_UP);   // Sets a pull-up.
+    gpioSetPullUpDown(CFG_DONE, PI_PUD_UP);   // Sets a pull-up.
+
     return;
 }
 
@@ -101,8 +120,9 @@ void resetFPGA(){
     return;
 }
 
-int serialConfig(char * buffer, unsigned int length){
-    unsigned int timer = 0;
+int serialConfig(char * buffer, unsigned int length)
+{
+    unsigned int count = 0;
     unsigned int write_length, write_index ;
     
     gpioWrite(CFG_PROG, 1);
@@ -110,37 +130,39 @@ int serialConfig(char * buffer, unsigned int length){
     gpioWrite(CFG_PROG, 0);
     __delay_cycles(5 * CFG_DELAY);
 
-    while (gpioRead(CFG_INIT) > 0 && timer < 900) {
-        printf("timer(%d) CFG_INIT(%d)\n", timer, gpioRead(CFG_INIT));
-        timer++; // waiting for init pin to go down
+    while (gpioRead(CFG_INIT) > 0 && count < 900) {
+        printf("count(%d) CFG_INIT(%d)\n", count, gpioRead(CFG_INIT));
+        count++; // waiting for init pin to go down
     }
-    printf("timer(%d) CFG_INIT(%d)\n", timer, gpioRead(CFG_INIT));
-    if (timer >= 900) {
+    printf("count(%d) CFG_INIT(%d)\n", count, gpioRead(CFG_INIT));
+    if (count >= 900) {
         printf("ERROR: FPGA did not answer to prog request, init pin not going low \n");
         gpioWrite(CFG_PROG, 1);
         return -1;
     }
 
-    timer = 0;
+    count = 0;
     __delay_cycles(5 * CFG_DELAY);
     gpioWrite(CFG_PROG, 1);
-    while (gpioRead(CFG_INIT) == 0 && timer < 256) { // need to find a better way ...
-        printf("timer(%d) CFG_INIT(%d)\n", timer, gpioRead(CFG_INIT));
-        timer++; // waiting for init pin to go up
+    while (gpioRead(CFG_INIT) == 0 && count < 256) { // need to find a better way ...
+        printf("count(%d) CFG_INIT(%d)\n", count, gpioRead(CFG_INIT));
+        count++; // waiting for init pin to go up
     }
-    printf("timer(%d) CFG_INIT(%d)\n", timer, gpioRead(CFG_INIT));
-    if (timer >= 256) {
+    printf("count(%d) CFG_INIT(%d)\n", count, gpioRead(CFG_INIT));
+    if (count >= 256) {
         printf("ERROR: FPGA did not answer to prog request, init pin not going high \n");
         return -1;
     }
 
-    timer = 0;
+    count = 0;
     write_length = min(length, SPI_MAX_LENGTH);
     write_index = 0 ;
     while(length > 0){
-        // if(write(spi_fd, &buffer[write_index], write_length) < write_length){
-        //     printf("spi write error \n");
-        // }
+        if (gpioRead(CFG_INIT) == 0) {
+            printf("CRC ERROR: INIT_B should not go low while configuring FPGA\n");
+            printf("length(%d) CFG_INIT(%d)\n", length, gpioRead(CFG_INIT));
+            return -1;
+        }
         if(spiWrite(spi_fd, &buffer[write_index], write_length) < write_length)
         {
             printf("spi write error \n");
@@ -152,8 +174,25 @@ int serialConfig(char * buffer, unsigned int length){
     }
     
     if (gpioRead(CFG_DONE) == 0) {
-        printf("ERROR: FPGA prog failed, done pin not going high \n");
-        printf("\ttimer(%d) CFG_DONE(%d)\n", timer, gpioRead(CFG_DONE));
+        printf("done pin not going high...\n");
+    }
+    printf("POST_CRC: INIT_B(%d)\n", gpioRead(CFG_INIT));
+    count = 0;
+    while (gpioRead(CFG_DONE) == 0) {
+        // INIT_B is used as h_txrdy_o after configuration
+        printf("SCLK(%d)\r", count);
+        buffer[0] = 0xFF;
+        write_length = 1;
+        if(spiWrite(spi_fd, &buffer[0], write_length) < write_length)
+        {
+            printf("spi write error \n");
+        }
+        count ++;
+    }
+
+    if (gpioRead(CFG_INIT) == 0) {
+        printf("%s (%s:%d) POST_CRC ERROR: INIT_B is low\n", __FILE__, __FUNCTION__, __LINE__);
+        printf("count(%d) CFG_INIT(%d)\n", count, gpioRead(CFG_INIT));
         return -1;
     }
 
@@ -210,12 +249,14 @@ int main(int argc, char ** argv){
         printf("cannot open file %s \n", argv[1]);
         return -1 ;	
     }
-    memset((void *) configBits, (int) 0, (size_t) 1024*1024);
-    size = fread(configBits, 1, 1024*1024, fr);
+
+    memset((void *) configBits, 0xFF, sizeof(configBits));
+    size = fread(configBits, sizeof(char), sizeof(configBits), fr);
     printf("bit file size : %d \n", size);
+    assert ((size + 5) <= sizeof(configBits));
 
     //8*5 clock cycle more at the end of config
-    if(serialConfig(configBits, size+5) < 0){
+    if(serialConfig(configBits, size + 5) < 0){
         printf("config error \n");
         exit(0);	
     }else{
