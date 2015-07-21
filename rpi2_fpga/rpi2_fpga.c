@@ -220,15 +220,15 @@ int main(int argc, char ** argv){
                 case 'r' :
                     resetFPGA(); 
                     closeGPIOs();
-                    return 1 ;
+                    return 0 ;
                     break ;
                 case 'h' :
                     printHelp();
-                    return 1 ;
+                    return 0 ;
                     break;
                 default :
                     printHelp();
-                    return 1 ;
+                    return 0 ;
                     break ;
             }
         }else{
@@ -258,7 +258,7 @@ int main(int argc, char ** argv){
     //8*5 clock cycle more at the end of config
     if(serialConfig(configBits, size + 5) < 0){
         printf("config error \n");
-        exit(0);	
+        exit(EXIT_FAILURE);
     }else{
         printf("config success ! \n");	
     }
@@ -266,8 +266,9 @@ int main(int argc, char ** argv){
     if (spiClose(spi_fd) != 0)
     {
         printf("config error \n");
+        return -1;
     }
     closeGPIOs();
     fclose(fr);
-    return 1;
+    return 0;
 }
