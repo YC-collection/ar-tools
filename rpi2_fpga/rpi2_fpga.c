@@ -28,10 +28,11 @@ static int  spi_fd;
 
 static unsigned int mode = 0 ;
 // failed for RPi2: static unsigned long speed = 16000000UL ;
-// static unsigned long speed = 15000000UL ;
+// static unsigned long speed = 16000000UL ;
 // static unsigned long speed =  1000000UL ;
 // static unsigned long speed =   100000UL ;
 static unsigned long speed =  9500000UL ;
+// static unsigned long speed =   500000UL ;
 
 char configBits[1024*1024*4], configDummy[1024*1024*4];
 
@@ -69,7 +70,7 @@ int init_spi(void){
     // refer to http://abyz.co.uk/rpi/pigpio/cif.html#spiOpen
     //             bbbbbb      R           T           nnnn        W          A          ux         px        mm
     // spiFlags = (0 << 16) | (0 << 15) | (0 << 14) | (0 << 10) | (0 << 9) | (0 << 8) | (0 << 5) | (0 << 2) | mode;
-    spiFlags = mode;
+    spiFlags = mode; // default mode(0)
     spi_fd = spiOpen(0, speed, spiFlags);
     printf("spi_fd(%d)\n", spi_fd);
 
@@ -150,7 +151,8 @@ int serialConfig(char * buffer, unsigned int length){
         length -= write_length ;
         write_length = min(length, SPI_MAX_LENGTH);
     }
-    
+   
+    // TODO: keep sending SPI CLK if DONE pin is not high
     if (gpioRead(CFG_DONE) == 0) {
         printf("ERROR: FPGA prog failed, done pin not going high \n");
         printf("\ttimer(%d) CFG_DONE(%d)\n", timer, gpioRead(CFG_DONE));
