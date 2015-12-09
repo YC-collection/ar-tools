@@ -9,8 +9,8 @@ all: clean ar_loader
 
 ar_loader: rpi2_fpga.o
 	$(CC) $(CFLAGS) -o  ar_loader $? $(LDFLAGS)
-	sudo chown root:artek ar_loader
-	sudo chmod 4750 ar_loader
+	# sudo chown root:artek ar_loader
+	# sudo chmod 4750 ar_loader
 
 # Makefile rules:
 # http://www.cyut.edu.tw/~dywang/linuxProgram/node36.html
