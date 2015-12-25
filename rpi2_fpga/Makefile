@@ -9,7 +9,7 @@ all: clean ar_loader
 
 ar_loader: rpi2_fpga.o
 	$(CC) $(CFLAGS) -o  ar_loader $? $(LDFLAGS)
-	sudo chown root:artek ar_loader
+	sudo chown root:pi ar_loader
 	sudo chmod 4750 ar_loader
 
 # Makefile rules:
@@ -19,7 +19,7 @@ ar_loader: rpi2_fpga.o
 
 install: ar_loader
 	install ar_loader /usr/bin
-	chown root:artek /usr/bin/ar_loader
+	chown root:pi /usr/bin/ar_loader
 	chmod 4750 /usr/bin/ar_loader
 
 clean:
