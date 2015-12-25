@@ -9,7 +9,7 @@ all: clean ar_loader
 
 ar_loader: serial_fpga_loader.o gpio.o
 	$(CC) -o  ar_loader $?
-	sudo chown root:machinekit ar_loader
+	sudo chown root:pi ar_loader
 	sudo chmod 4750 ar_loader
 
 # Makefile rules:
